@@ -12,9 +12,6 @@ var grid_data: Array = []
 
 func _ready():
 	initialize_grid()
-	set_cell(1, 1, 1)
-	set_cell(2, 1, 1)
-	set_cell(2, 2, 1)
 	queue_redraw()
 
 func initialize_grid():
@@ -30,16 +27,6 @@ func initialize_grid():
 
 func _draw():
 	draw_grid()
-
-#func draw_grid():
-	#for y in range(rows):
-		#for x in range(cols):
-			#var cell_position = Vector2(x * cell_size, y * cell_size)
-			#var cell_size_vector = Vector2(cell_size, cell_size)
-			#var cell_rect = Rect2(cell_position, cell_size_vector)
-#
-			#draw_rect(cell_rect, grid_fill_color, true)
-			#draw_rect(cell_rect, grid_line_color, false, 2.0)
 
 func draw_grid():
 	for y in range(rows):
@@ -74,4 +61,44 @@ func set_cell(grid_x: int, grid_y: int, value: int):
 	grid_data[grid_y][grid_x] = value
 	queue_redraw()
 	
+func grid_to_local(grid_x: int, grid_y: int) -> Vector2:
+	return Vector2(grid_x * cell_size, grid_y * cell_size)	
 	
+func grid_to_global(grid_x: int, grid_y: int) -> Vector2:
+	return to_global(grid_to_local(grid_x, grid_y))
+	
+func local_to_grid(local_position: Vector2) -> Vector2i:
+	var grid_x = floor(local_position.x / cell_size)
+	var grid_y = floor(local_position.y / cell_size)
+
+	return Vector2i(grid_x, grid_y)
+	
+func global_to_grid(global_position: Vector2) -> Vector2i:
+	var local_position = to_local(global_position)
+	return local_to_grid(local_position)	
+	
+func get_cell_rect(grid_x: int, grid_y: int) -> Rect2:
+	var cell_position = grid_to_local(grid_x, grid_y)
+	return Rect2(cell_position, Vector2(cell_size, cell_size))	
+
+func is_global_position_inside_board(global_position: Vector2) -> bool:
+	var local_position = to_local(global_position)
+
+	return local_position.x >= 0 and local_position.x < cols * cell_size and local_position.y >= 0 and local_position.y < rows * cell_size
+
+func get_mouse_grid_position() -> Vector2i:
+	return global_to_grid(get_global_mouse_position())
+	
+func get_cell_center_local(grid_x: int, grid_y: int) -> Vector2:
+	return grid_to_local(grid_x, grid_y) + Vector2(cell_size, cell_size) * 0.5
+	
+func get_cell_center_global(grid_x: int, grid_y: int) -> Vector2:
+	return to_global(get_cell_center_local(grid_x, grid_y))
+	
+func _process(delta):
+	if Input.is_action_just_pressed("ui_accept"):
+		var mouse_global = get_global_mouse_position()
+		var mouse_grid = global_to_grid(mouse_global)
+
+		print("Mouse global:", mouse_global)
+		print("Mouse grid:", mouse_grid)	

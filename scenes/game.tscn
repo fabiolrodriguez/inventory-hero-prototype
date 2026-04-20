@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dkllrpvtsqaup" path="res://scripts/core/game.gd" id="1_lnu2h"]
 [ext_resource type="Script" uid="uid://bqfq2vjg2qbg6" path="res://scripts/board.gd" id="1_uwrxv"]
 [ext_resource type="Script" uid="uid://c4cx78ecdsk4o" path="res://scripts/gameplay/pieces.gd" id="3_lbhrr"]
+[ext_resource type="PackedScene" uid="uid://c78ls8gtodv6m" path="res://scenes/piece.tscn" id="4_lbhrr"]
 
 [node name="Game" type="Node2D" unique_id=970992208]
 script = ExtResource("1_lnu2h")
@@ -12,5 +13,7 @@ script = ExtResource("1_uwrxv")
 
 [node name="Pieces" type="Node2D" parent="." unique_id=635705418]
 script = ExtResource("3_lbhrr")
+
+[node name="Piece" parent="Pieces" unique_id=484531535 instance=ExtResource("4_lbhrr")]
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1468622225]
