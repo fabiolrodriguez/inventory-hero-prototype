@@ -11,8 +11,14 @@ config_version=5
 [application]
 
 config/name="iventory-proto"
+run/main_scene="uid://yqglf1uise4p"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
 
 [physics]
 
