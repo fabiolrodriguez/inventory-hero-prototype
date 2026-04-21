@@ -1,7 +1,7 @@
 extends Node2D
 
-@export var cols: int = 6
-@export var rows: int = 6
+@export var cols: int = 4
+@export var rows: int = 4
 @export var cell_size: int = 64
 
 @export var grid_line_color: Color = Color(0.8, 0.8, 0.8, 1.0)
@@ -101,4 +101,43 @@ func _process(delta):
 		var mouse_grid = global_to_grid(mouse_global)
 
 		print("Mouse global:", mouse_global)
-		print("Mouse grid:", mouse_grid)	
+		print("Mouse grid:", mouse_grid)
+		
+func can_place_piece(shape: Array, grid_x: int, grid_y: int) -> bool:
+	for y in range(shape.size()):
+		for x in range(shape[y].size()):
+			if shape[y][x] == 1:
+				var target_x = grid_x + x
+				var target_y = grid_y + y
+
+				if not is_inside_grid(target_x, target_y):
+					return false
+
+				if not is_cell_empty(target_x, target_y):
+					return false
+
+	return true
+	
+func place_piece(shape: Array, grid_x: int, grid_y: int):
+	for y in range(shape.size()):
+		for x in range(shape[y].size()):
+			if shape[y][x] == 1:
+				set_cell(grid_x + x, grid_y + y, 1)
+				
+func clear_piece(shape: Array, grid_x: int, grid_y: int):
+	for y in range(shape.size()):
+		for x in range(shape[y].size()):
+			if shape[y][x] == 1:
+				var target_x = grid_x + x
+				var target_y = grid_y + y
+
+				if is_inside_grid(target_x, target_y):
+					set_cell(target_x, target_y, 0)
+					
+func is_board_full() -> bool:
+	for y in range(rows):
+		for x in range(cols):
+			if grid_data[y][x] == 0:
+				return false
+
+	return true									
