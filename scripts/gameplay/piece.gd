@@ -18,7 +18,7 @@ var previous_grid_position: Vector2i = Vector2i.ZERO
 var was_placed_before_drag: bool = false
 
 var is_dragging: bool = false
-var drag_offset: Vector2 = Vector2.ZERO
+#var drag_offset: Vector2 = Vector2.ZERO
 
 static var selected_piece = null
 
@@ -29,29 +29,44 @@ func _draw():
 	draw_piece()
 
 func _process(delta):
-	if is_dragging:
-		global_position = get_global_mouse_position() - drag_offset
+	if is_dragging and selected_piece == self:
+		global_position = get_global_mouse_position() - get_shape_size_pixels() * 0.5
 
 	queue_redraw()
 
 func _input(event):
-	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				try_start_drag()
-			else:
-				if is_dragging:
-					stop_drag()
-					try_place_on_board()
+	if event.is_action_pressed("action_pick"):
+		if is_dragging and selected_piece == self:
+			stop_drag()
+			try_place_on_board()
+		else:
+			try_start_drag()
 
-	if event is InputEventKey:
-		if event.pressed and not event.echo:
-			if event.keycode == KEY_R and selected_piece == self:
-				try_rotate()
+	if event.is_action_pressed("action_rotate") and selected_piece == self:
+		try_rotate()
 
+#func _input(event):
+	##if event is InputEventMouseButton:
+#
+	#if Input.is_action_just_pressed("action_pick"):
+		#if is_dragging and selected_piece == self:
+			#stop_drag()
+			#try_place_on_board()
+		#else:
+			#try_start_drag()
+		#
+		##if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		#if Input.is_action_just_pressed("action_pick"):		
+			#if is_dragging and selected_piece == self:
+				#stop_drag()
+				#try_place_on_board()
+			#else:
+				#try_start_drag()
+#
 	#if event is InputEventKey:
 		#if event.pressed and not event.echo:
-			#if event.keycode == KEY_R:
+			##if event.keycode == KEY_R and selected_piece == self:
+			#if Input.is_action_just_pressed("action_rotate") and selected_piece == self:
 				#try_rotate()
 
 func draw_piece():
@@ -107,11 +122,14 @@ func get_piece_rect_global() -> Rect2:
 	return Rect2(global_position, get_shape_size_pixels())
 
 func try_start_drag():
-	var mouse_position = get_global_mouse_position()
+	#var mouse_position = get_global_mouse_position()
+	var mouse_position = get_cursor_position()
 	var piece_rect = get_piece_rect_global()
 
 	if piece_rect.has_point(mouse_position):
 		selected_piece = self
+		get_parent().move_child(self, get_parent().get_child_count() - 1)
+
 		original_position = global_position
 		was_placed_before_drag = placed
 
@@ -121,25 +139,31 @@ func try_start_drag():
 			placed = false
 
 		is_dragging = true
-		drag_offset = mouse_position - global_position
 
 func stop_drag():
 	is_dragging = false
 
 func try_place_on_board():
 	if board == null:
-		global_position = original_position
 		return
 
-	var target_grid = board.global_to_grid(global_position)
-	var grid_x = target_grid.x
-	var grid_y = target_grid.y
+	var piece_center = get_piece_center_global()
 
-	if board.can_place_piece(shape, grid_x, grid_y):
-		board.place_piece(shape, grid_x, grid_y)
-		global_position = board.grid_to_global(grid_x, grid_y)
+	# Se soltou fora da área magnética do board,
+	# a peça fica onde foi largada e permanece desencaixada.
+	if not board.is_piece_center_inside_snap_area(piece_center):
+		placed = false
+		return
+
+	var preferred_grid = board.get_snap_grid_for_piece(global_position)
+	var best_grid = board.find_best_placement_for_piece(shape, preferred_grid.x, preferred_grid.y)
+
+	if best_grid != null:
+		board.place_piece(shape, best_grid.x, best_grid.y)
+		global_position = board.grid_to_global(best_grid.x, best_grid.y)
 		placed = true
-		placed_grid_position = Vector2i(grid_x, grid_y)
+		placed_grid_position = best_grid
+
 		var game = get_tree().current_scene
 		if game != null and game.has_method("check_level_complete"):
 			game.check_level_complete()
@@ -150,6 +174,8 @@ func try_place_on_board():
 			board.place_piece(shape, previous_grid_position.x, previous_grid_position.y)
 			placed = true
 			placed_grid_position = previous_grid_position
+			
+	selected_piece = null
 
 func get_rotated_shape_clockwise(source_shape: Array) -> Array:
 	var new_shape: Array = []
@@ -201,3 +227,12 @@ func try_rotate():
 		board.place_piece(shape, placed_grid_position.x, placed_grid_position.y)
 
 	queue_redraw()
+
+func get_piece_center_global() -> Vector2:
+	return global_position + get_shape_size_pixels() * 0.5
+	
+func get_cursor_position() -> Vector2:
+	var game = get_tree().current_scene
+	if game != null and game.has_node("Cursor"):
+		return game.get_node("Cursor").global_position
+	return get_global_mouse_position()	

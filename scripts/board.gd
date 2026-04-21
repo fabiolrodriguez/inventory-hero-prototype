@@ -8,6 +8,8 @@ extends Node2D
 @export var grid_fill_color: Color = Color(0.15, 0.15, 0.15, 1.0)
 @export var occupied_fill_color: Color = Color(0.4, 0.8, 0.4, 1.0)
 
+@export var snap_margin: int = 32
+
 var grid_data: Array = []
 
 func _ready():
@@ -140,4 +142,53 @@ func is_board_full() -> bool:
 			if grid_data[y][x] == 0:
 				return false
 
-	return true									
+	return true
+	
+func get_nearest_grid_position_from_global(global_position: Vector2) -> Vector2i:
+	var local_position = to_local(global_position)
+
+	var grid_x = int(round(local_position.x / cell_size))
+	var grid_y = int(round(local_position.y / cell_size))
+
+	return Vector2i(grid_x, grid_y)
+	
+func get_snap_grid_for_piece(global_position: Vector2) -> Vector2i:
+	var local_position = to_local(global_position)
+
+	var grid_x = int(round(local_position.x / cell_size))
+	var grid_y = int(round(local_position.y / cell_size))
+
+	return Vector2i(grid_x, grid_y)		
+
+func find_best_placement_for_piece(shape: Array, preferred_grid_x: int, preferred_grid_y: int) -> Variant:
+	var candidate_offsets = [
+		Vector2i(0, 0),
+		Vector2i(-1, 0),
+		Vector2i(1, 0),
+		Vector2i(0, -1),
+		Vector2i(0, 1),
+		Vector2i(-1, -1),
+		Vector2i(1, -1),
+		Vector2i(-1, 1),
+		Vector2i(1, 1)
+	]
+
+	for offset in candidate_offsets:
+		var test_x = preferred_grid_x + offset.x
+		var test_y = preferred_grid_y + offset.y
+
+		if can_place_piece(shape, test_x, test_y):
+			return Vector2i(test_x, test_y)
+
+	return null
+
+func get_board_rect_global() -> Rect2:
+	return Rect2(global_position, get_board_size_pixels())
+	
+func is_piece_center_inside_board(piece_global_center: Vector2) -> bool:
+	return get_board_rect_global().has_point(piece_global_center)	
+
+func is_piece_center_inside_snap_area(piece_global_center: Vector2) -> bool:
+	var board_rect = get_board_rect_global()
+	var expanded_rect = board_rect.grow(snap_margin)
+	return expanded_rect.has_point(piece_global_center)
